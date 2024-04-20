@@ -1,0 +1,14 @@
+<component name="libraryTable">
+  <library name="glassfish.javax.json" type="repository">
+    <properties maven-id="org.glassfish:javax.json:1.1.2">
+      <exclude>
+        <dependency maven-id="javax.json:javax.json-api" />
+      </exclude>
+    </properties>
+    <CLASSES>
+      <root url="jar://$MAVEN_REPOSITORY$/org/glassfish/javax.json/1.1.2/javax.json-1.1.2.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>
