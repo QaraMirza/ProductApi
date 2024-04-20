@@ -1,7 +1,5 @@
-import com.google.gson.Gson;
-
-import javax.swing.text.Document;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -16,7 +14,6 @@ public class CrptApi {
     private int currentLimit;
     private final String url;
     private final HttpClient httpClient;
-    private final Gson gson;
 
 
     public CrptApi(TimeUnit timeUnit, int requestLimit) throws InvalidParameterException {
@@ -30,20 +27,27 @@ public class CrptApi {
         this.currentLimit = requestLimit;
         this.url = "https://ismp.crpt.ru/api/v3/lk/documents/create";
         this.httpClient = HttpClient.newHttpClient();
-        this.gson = new Gson();
 
         scheduler.scheduleAtFixedRate(() -> currentLimit = requestLimit, 0, 1, timeUnit);
 
     }
 
 
-    public boolean createDocument(Document document, String signature) throws InterruptedException, IOException {
+    public boolean createDocument(String document, String signature) throws InterruptedException, IOException {
 
         if (currentLimit == 0) {
+            System.out.println("System overloaded");
             return false;
         }
 
-        String json = gson.toJson(document);
+        String json;
+        try (InputStream inputStream = CrptApi.class.getResourceAsStream(document)) {
+            if (inputStream == null) {
+                throw new IOException(document + " not found");
+            }
+            json = new String(inputStream.readAllBytes());
+        }
+
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(url))
                 .header("Content-Type", "application/json")
@@ -52,12 +56,30 @@ public class CrptApi {
 
         HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
 
+
+        //Comment it for test
         if (response.statusCode() != 200) {
             throw new RuntimeException("Error creating document: " + response.statusCode());
         }
 
         currentLimit--;
+        System.out.println("200");
         return true;
 
+    }
+
+
+    public static void main(String[] args) throws IOException, InterruptedException {
+        CrptApi api = new CrptApi(TimeUnit.MINUTES, 2);
+
+        String document = "/data.json";
+
+        String signature1 = "1111";
+        String signature2 = "2222";
+        String signature3 = "3333";
+
+        api.createDocument(document, signature1);
+        api.createDocument(document, signature2);
+        api.createDocument(document, signature3);
     }
 }
